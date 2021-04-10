@@ -44,7 +44,7 @@ class PSOAlgorithm:
         eval_value_global_best_particles_swarm = self.evaluation_function(particle=self.particles_swarm[0],
                                                                           data_matrix=self.data_matrix)
 
-        for index_particle in range(self.particles_swarm_dimensions[0]):
+        for index_particle in range(1, self.particles_swarm_dimensions[0]):
             eval_value_current_particle = self.evaluation_function(particle=self.particles_swarm[index_particle],
                                                                    data_matrix=self.data_matrix)
 
@@ -58,20 +58,20 @@ class PSOAlgorithm:
 
     def update_particle_velocity(self, index_particle):
         for dimension in range(len(self.particles_swarm[index_particle])):
-            rand_1 = np.random.rand()
-            rand_2 = np.random.rand()
+            rand_1 = np.random.random()
+            rand_2 = np.random.random()
 
             current_velocity = self.velocities_particles_swarm[index_particle][dimension]
 
             updated_velocity = self.inertia * current_velocity + \
                                self.acc_fac_1 * rand_1 * (self.personal_best_particles_swarm[index_particle][dimension] - self.particles_swarm[index_particle][dimension]) + \
-                               self.acc_fac_2 * rand_2 * (self.global_best_particles_swarm[index_particle][dimension] - self.particles_swarm[index_particle][dimension])
+                               self.acc_fac_2 * rand_2 * (self.global_best_particles_swarm[dimension] - self.particles_swarm[index_particle][dimension])
 
             self.velocities_particles_swarm[index_particle][dimension] = updated_velocity
 
     def update_particle_position(self, index_particle):
         for dimension in range(len(self.particles_swarm[index_particle])):
-            rand_value = np.random.rand()
+            rand_value = np.random.random()
 
             sigmoid_value_current_velocity = 1 / (1 + np.exp(self.velocities_particles_swarm[index_particle][dimension]))
 
@@ -94,7 +94,7 @@ class PSOAlgorithm:
             for iteration in range(self.num_iterations):
 
                 for index_particle in range(self.particles_swarm_dimensions[0]):
-                    self.update_particle_position(index_particle)
+                    self.update_particle_velocity(index_particle)
 
                     self.update_particle_position(index_particle)
 
