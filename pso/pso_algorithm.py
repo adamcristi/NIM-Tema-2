@@ -2,6 +2,11 @@ import numpy as np
 import copy
 import sys
 import time
+import concurrent.futures
+
+from utils.coverage_check import fast_coverage_check
+
+MAX_WORKERS = 12
 
 
 class PSOAlgorithm:
@@ -37,6 +42,7 @@ class PSOAlgorithm:
         # compute best_particles
         # compute best_swarm
 
+        aux = np.random.randint(0, self.particles_swarm_dimensions[1], self.particles_swarm_dimensions[0])
         self.particles_swarm = np.random.randint(0, 2, self.particles_swarm_dimensions)
 
         self.personal_best_particles_swarm = copy.deepcopy(self.particles_swarm)
@@ -85,6 +91,60 @@ class PSOAlgorithm:
             else:
                 self.particles_swarm[index_particle][dimension] = 0
 
+    def execute_threads(self, array, function, *func_args):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as th_executor:
+
+            arr_size = len(array)
+
+            workers = 0
+            tasks = []
+
+            still_running = True
+            element_index = 0
+
+            while still_running:
+                full_usage = True
+
+                # If is not the end of population
+                if element_index < arr_size:
+
+                    if workers < MAX_WORKERS:
+                        full_usage = False
+                        workers += 1
+
+                        tasks.append(th_executor.submit(function, element_index, *func_args))
+
+                        element_index += 1
+
+                if full_usage:
+
+                    done, not_done = concurrent.futures.wait(tasks, return_when=concurrent.futures.FIRST_COMPLETED)
+
+                    # Safety mechanism
+                    if len(not_done) == 0 and len(done) == 0:
+                        still_running = False
+
+                    else:
+                        for future in done:
+                            # Remove from active tasks
+                            tasks.remove(future)
+
+                            # Mark the worker as free
+                            workers -= 1
+
+    def process_particle(self, index_particle, personal_best_values):
+        self.update_particle_velocity(index_particle)
+
+        self.update_particle_position(index_particle)
+
+        eval_value_current_particle = self.evaluation_function(
+            particle=self.particles_swarm[index_particle],
+            data_matrix=self.data_matrix)
+
+        if eval_value_current_particle < personal_best_values[index_particle]:
+            self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
+            personal_best_values[index_particle] = eval_value_current_particle
+
     def execute_algorithm(self):
         for run in range(self.num_runs):
 
@@ -107,22 +167,26 @@ class PSOAlgorithm:
 
             for iteration in range(self.num_iterations):
 
+                # for index_particle in range(self.particles_swarm_dimensions[0]):
+                #     self.update_particle_velocity(index_particle)
+                #
+                #     self.update_particle_position(index_particle)
+                #
+                #     eval_value_current_particle = self.evaluation_function(
+                #         particle=self.particles_swarm[index_particle],
+                #         data_matrix=self.data_matrix)
+                #
+                #     if eval_value_current_particle < personal_best_values[index_particle]:
+                #         self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
+                #         personal_best_values[index_particle] = eval_value_current_particle
+
+                self.execute_threads(range(self.particles_swarm_dimensions[0]), self.process_particle,
+                                     personal_best_values)
+
                 for index_particle in range(self.particles_swarm_dimensions[0]):
-                    self.update_particle_velocity(index_particle)
-
-                    self.update_particle_position(index_particle)
-
-                    eval_value_current_particle = self.evaluation_function(
-                        particle=self.particles_swarm[index_particle],
-                        data_matrix=self.data_matrix)
-
-                    if eval_value_current_particle < personal_best_values[index_particle]:
-                        self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
-                        personal_best_values[index_particle] = eval_value_current_particle
-
-                        if eval_value_current_particle < eval_value_global_best:
-                            self.global_best_particles_swarm = self.particles_swarm[index_particle]
-                            eval_value_global_best = eval_value_current_particle
+                    if personal_best_values[index_particle] < eval_value_global_best:
+                        self.global_best_particles_swarm = self.personal_best_particles_swarm[index_particle]
+                        eval_value_global_best = personal_best_values[index_particle]
 
                 if sys.version_info.major == 3 and sys.version_info.minor >= 7:
                     end = time.time_ns()
@@ -132,10 +196,10 @@ class PSOAlgorithm:
                     print(f"Iteration {iteration} - Elapsed time: {(end - start)} seconds.")
 
         print(np.count_nonzero(self.global_best_particles_swarm))
+        print(fast_coverage_check(self.global_best_particles_swarm, self.data_matrix))
         print("")
         for index_particle in range(self.particles_swarm_dimensions[0]):
             print(np.count_nonzero(self.personal_best_particles_swarm[index_particle]))
-
+            print(fast_coverage_check(self.personal_best_particles_swarm[index_particle], self.data_matrix))
         # for index_particle in range(self.particles_swarm_dimensions[0]):
         #     print(np.count_nonzero(self.particles_swarm[index_particle]))
-

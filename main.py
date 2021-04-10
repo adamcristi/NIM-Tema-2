@@ -22,11 +22,11 @@ else:
     start = time.time()
 
 pso = PSOAlgorithm(data_matrix=data_matrix,
-                   eval_function=eval_particle_2,
+                   eval_function=eval_particle_1,
                    runs=1,
                    iterations=100,
                    particles=50,
-                   inertia_weight=0.9,
+                   inertia_weight=0.5,
                    acceleration_factor_1=2.05,
                    acceleration_factor_2=2.05)
 
