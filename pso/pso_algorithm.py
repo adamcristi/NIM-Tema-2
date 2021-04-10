@@ -6,7 +6,7 @@ import concurrent.futures
 
 from utils.coverage_check import fast_coverage_check
 
-MAX_WORKERS = 12
+MAX_WORKERS = 8  # 12
 
 
 class PSOAlgorithm:
@@ -42,8 +42,20 @@ class PSOAlgorithm:
         # compute best_particles
         # compute best_swarm
 
-        aux = np.random.randint(0, self.particles_swarm_dimensions[1], self.particles_swarm_dimensions[0])
-        self.particles_swarm = np.random.randint(0, 2, self.particles_swarm_dimensions)
+        self.particles_swarm = []
+        counts_ones = np.random.randint(low=0, high=self.particles_swarm_dimensions[1],
+                                        size=self.particles_swarm_dimensions[0])
+
+        for count_ones in counts_ones:
+            ones_particle = np.ones((count_ones,))
+            zeros_particle = np.zeros((self.particles_swarm_dimensions[1] - count_ones,))
+            ones_and_zeros_particle = np.concatenate((ones_particle, zeros_particle)).astype(np.int64)
+            np.random.shuffle(ones_and_zeros_particle)
+            self.particles_swarm.append(ones_and_zeros_particle)
+
+        self.particles_swarm = np.array(self.particles_swarm) 
+
+        # self.particles_swarm = np.random.randint(0, 2, self.particles_swarm_dimensions)
 
         self.personal_best_particles_swarm = copy.deepcopy(self.particles_swarm)
 
