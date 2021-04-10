@@ -3,6 +3,7 @@ import copy
 import sys
 import time
 
+
 class PSOAlgorithm:
 
     def __init__(self, data_matrix, eval_function, runs=1, iterations=30, particles=30, inertia_weight=1,
@@ -64,8 +65,11 @@ class PSOAlgorithm:
             current_velocity = self.velocities_particles_swarm[index_particle][dimension]
 
             updated_velocity = self.inertia * current_velocity + \
-                               self.acc_fac_1 * rand_1 * (self.personal_best_particles_swarm[index_particle][dimension] - self.particles_swarm[index_particle][dimension]) + \
-                               self.acc_fac_2 * rand_2 * (self.global_best_particles_swarm[dimension] - self.particles_swarm[index_particle][dimension])
+                               self.acc_fac_1 * rand_1 * (
+                                       self.personal_best_particles_swarm[index_particle][dimension] -
+                                       self.particles_swarm[index_particle][dimension]) + \
+                               self.acc_fac_2 * rand_2 * (self.global_best_particles_swarm[dimension] -
+                                                          self.particles_swarm[index_particle][dimension])
 
             self.velocities_particles_swarm[index_particle][dimension] = updated_velocity
 
@@ -73,7 +77,8 @@ class PSOAlgorithm:
         for dimension in range(len(self.particles_swarm[index_particle])):
             rand_value = np.random.random()
 
-            sigmoid_value_current_velocity = 1 / (1 + np.exp(self.velocities_particles_swarm[index_particle][dimension]))
+            sigmoid_value_current_velocity = 1 / (
+                    1 + np.exp(-self.velocities_particles_swarm[index_particle][dimension]))
 
             if rand_value < sigmoid_value_current_velocity:
                 self.particles_swarm[index_particle][dimension] = 1
@@ -91,6 +96,15 @@ class PSOAlgorithm:
             else:
                 start = time.time()
 
+            personal_best_values = []
+            for index_particle in range(self.particles_swarm_dimensions[0]):
+                personal_best_values.append(self.evaluation_function(
+                    particle=self.personal_best_particles_swarm[index_particle],
+                    data_matrix=self.data_matrix))
+
+            eval_value_global_best = self.evaluation_function(particle=self.global_best_particles_swarm,
+                                                              data_matrix=self.data_matrix)
+
             for iteration in range(self.num_iterations):
 
                 for index_particle in range(self.particles_swarm_dimensions[0]):
@@ -98,18 +112,17 @@ class PSOAlgorithm:
 
                     self.update_particle_position(index_particle)
 
-                    eval_value_current_particle = self.evaluation_function(particle=self.particles_swarm[index_particle],
-                                                                           data_matrix=self.data_matrix)
-                    eval_value_personal_best = self.evaluation_function(particle=self.personal_best_particles_swarm[index_particle],
-                                                                        data_matrix=self.data_matrix)
+                    eval_value_current_particle = self.evaluation_function(
+                        particle=self.particles_swarm[index_particle],
+                        data_matrix=self.data_matrix)
 
-                    if eval_value_current_particle < eval_value_personal_best:
+                    if eval_value_current_particle < personal_best_values[index_particle]:
                         self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
-                        eval_value_global_best = self.evaluation_function(particle=self.global_best_particles_swarm,
-                                                                          data_matrix=self.data_matrix)
+                        personal_best_values[index_particle] = eval_value_current_particle
 
                         if eval_value_current_particle < eval_value_global_best:
                             self.global_best_particles_swarm = self.particles_swarm[index_particle]
+                            eval_value_global_best = eval_value_current_particle
 
                 if sys.version_info.major == 3 and sys.version_info.minor >= 7:
                     end = time.time_ns()
@@ -119,3 +132,10 @@ class PSOAlgorithm:
                     print(f"Iteration {iteration} - Elapsed time: {(end - start)} seconds.")
 
         print(np.count_nonzero(self.global_best_particles_swarm))
+        print("")
+        for index_particle in range(self.particles_swarm_dimensions[0]):
+            print(np.count_nonzero(self.personal_best_particles_swarm[index_particle]))
+
+        # for index_particle in range(self.particles_swarm_dimensions[0]):
+        #     print(np.count_nonzero(self.particles_swarm[index_particle]))
+
