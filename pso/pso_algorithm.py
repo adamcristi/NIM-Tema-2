@@ -32,6 +32,7 @@ class PSOAlgorithm:
 
         self.personal_best_particles_swarm = None  # (dimensions (30, 2904))
         self.global_best_particles_swarm = None  # (dimensions (1, 2904))
+        self.best_iteration = None
 
         self.velocities_particles_swarm = None  # (dimensions (30, 2904))
         self.min_velocity = -6
@@ -39,6 +40,7 @@ class PSOAlgorithm:
 
         self.eval_value_global_best_particles = None  # (dimension 1))
         self.eval_values_personal_best_particles = []  # (dimension (30,))
+        self.eval_value_best_iteration = None
 
         self.experiment_name = name + experiment_type + str(datetime.timestamp(datetime.now())) + ".txt"
 
@@ -48,11 +50,19 @@ class PSOAlgorithm:
         self.minimum_coverage_personal_best = None
         self.is_full_minimum_coverage_personal_best = None
         self.evaluation_value_minimum_coverage_personal_best = None
+        self.coverage_best_iteration = None
+        self.is_full_coverage_best_iteration = None
+        self.evaluation_value_best_iteration = None
 
         self.runs_coverage_global_best = []
         self.runs_is_full_coverage_global_best = []
+        self.runs_evaluation_value_global_best = []
         self.runs_minimum_coverage_personal_best = []
         self.runs_is_full_minimum_coverage_personal_best = []
+        self.runs_evaluation_value_minimum_coverage_personal_best = []
+        self.runs_coverage_best_iteration = []
+        self.runs_is_full_coverage_best_iteration = []
+        self.runs_evaluation_value_best_iteration = []
 
         self.inertia_max = 0.6
         self.inertia_min = 0.2
@@ -303,6 +313,10 @@ class PSOAlgorithm:
         self.evaluation_value_minimum_coverage_personal_best = self.eval_values_personal_best_particles[
             index_minimum_coverage_personal_best]
 
+        self.coverage_best_iteration = np.count_nonzero(self.best_iteration)
+        self.is_full_coverage_best_iteration = fast_coverage_check(self.best_iteration, self.data_matrix)
+        self.evaluation_value_best_iteration = self.eval_value_best_iteration
+
         delimiter = " ;" + " " * 4
 
         info = f"coverage_global_best = {self.coverage_global_best}{delimiter}"
@@ -311,6 +325,9 @@ class PSOAlgorithm:
         info += f"minimum_coverage_personal_best = {self.minimum_coverage_personal_best}{delimiter}"
         info += f"is_full_minimum_coverage_personal_best = {self.is_full_minimum_coverage_personal_best}{delimiter}"
         info += f"evaluation_value_minimum_coverage_personal_best = {self.evaluation_value_minimum_coverage_personal_best:.14f}{delimiter}"
+        info += f"coverage_best_iteration = {self.coverage_best_iteration}{delimiter}"
+        info += f"is_full_coverage_best_iteration = {self.is_full_coverage_best_iteration}{delimiter}"
+        info += f"evaluation_value_best_iteration = {self.evaluation_value_best_iteration}{delimiter}"
 
         return info
 
@@ -328,16 +345,23 @@ class PSOAlgorithm:
         with open(LOGS_PATH + self.experiment_name[:-4] + "_runs.txt", "a+") as file:
             file.write(info_run + "\n")
 
-        self.runs_coverage_global_best.append(self.coverage_global_best)
-        self.runs_is_full_coverage_global_best.append(self.is_full_coverage_global_best)
-        self.runs_minimum_coverage_personal_best.append(self.minimum_coverage_personal_best)
-        self.runs_is_full_minimum_coverage_personal_best.append(self.is_full_minimum_coverage_personal_best)
+        if self.is_full_coverage_global_best:
+            self.runs_coverage_global_best.append(self.coverage_global_best)
+            self.runs_is_full_coverage_global_best.append(self.is_full_coverage_global_best)
+            self.runs_evaluation_value_global_best.append(self.evaluation_value_global_best)
+            self.runs_minimum_coverage_personal_best.append(self.minimum_coverage_personal_best)
+            self.runs_is_full_minimum_coverage_personal_best.append(self.is_full_minimum_coverage_personal_best)
+            self.runs_evaluation_value_minimum_coverage_personal_best.append(self.evaluation_value_minimum_coverage_personal_best)
+            self.runs_coverage_best_iteration.append(self.coverage_best_iteration)
+            self.runs_is_full_coverage_best_iteration.append(self.is_full_coverage_best_iteration)
+            self.runs_evaluation_value_best_iteration.append(self.evaluation_value_best_iteration)
 
     def write_log_info_runs(self):
         info_runs = f"\n\nRuns: "
 
         index_min_run_coverage_global_best = np.argmin(self.runs_coverage_global_best)
         index_min_run_minimum_coverage_personal_best = np.argmin(self.runs_minimum_coverage_personal_best)
+        index_min_run_coverage_best_iteration = np.argmin(self.runs_coverage_best_iteration)
 
         delimiter = " ;" + " " * 4
 
@@ -349,10 +373,17 @@ class PSOAlgorithm:
 
         info_runs += f"\n      "
         info_runs += f"is_full_min_run_minimum_coverage_personal_best = {self.runs_is_full_minimum_coverage_personal_best[index_min_run_minimum_coverage_personal_best]}{delimiter}"
-        info_runs += f"min_run_minimum_coverage_personal_best = {self.runs_minimum_coverage_personal_best[index_min_run_minimum_coverage_personal_best]}{delimiter}"
-        info_runs += f"max_coverage_global_best = {np.max(self.runs_minimum_coverage_personal_best)}{delimiter}"
-        info_runs += f"mean_coverage_global_best = {np.mean(self.runs_minimum_coverage_personal_best)}{delimiter}"
-        info_runs += f"std_coverage_global_best = {np.std(self.runs_minimum_coverage_personal_best)}{delimiter}"
+        info_runs += f"min_minimum_coverage_personal_best = {self.runs_minimum_coverage_personal_best[index_min_run_minimum_coverage_personal_best]}{delimiter}"
+        info_runs += f"max_minimum_coverage_personal_best = {np.max(self.runs_minimum_coverage_personal_best)}{delimiter}"
+        info_runs += f"mean_minimum_coverage_personal_best = {np.mean(self.runs_minimum_coverage_personal_best)}{delimiter}"
+        info_runs += f"std_minimum_coverage_personal_best = {np.std(self.runs_minimum_coverage_personal_best)}{delimiter}"
+
+        info_runs += f"\n      "
+        info_runs += f"is_full_coverage_best_iteration = {self.runs_is_full_coverage_best_iteration[index_min_run_coverage_best_iteration]}{delimiter}"
+        info_runs += f"min_coverage_best_iteration = {self.runs_coverage_best_iteration[index_min_run_coverage_best_iteration]}{delimiter}"
+        info_runs += f"max_coverage_best_iteration = {np.max(self.runs_coverage_best_iteration)}{delimiter}"
+        info_runs += f"mean_coverage_best_iteration = {np.mean(self.runs_coverage_best_iteration)}{delimiter}"
+        info_runs += f"std_coverage_best_iteration = {np.std(self.runs_coverage_best_iteration)}{delimiter}"
 
         with open(LOGS_PATH + self.experiment_name[:-4] + "_runs.txt", "a+") as file:
             file.write(info_runs + "\n")
@@ -403,8 +434,8 @@ class PSOAlgorithm:
 
                 self.current_iteration = iteration
 
-                current_best = copy.deepcopy(self.particles_swarm[0])
-                current_best_eval = self.evaluation_function(particle=current_best, data_matrix=self.data_matrix)
+                self.best_iteration= copy.deepcopy(self.particles_swarm[0])
+                self.eval_value_best_iteration = self.evaluation_function(particle=self.best_iteration, data_matrix=self.data_matrix)
 
                 for index_particle in range(self.particles_swarm_dimensions[0]):
                     self.update_particle_velocity(index_particle)
@@ -420,9 +451,9 @@ class PSOAlgorithm:
                             self.particles_swarm[index_particle])
                         self.eval_values_personal_best_particles[index_particle] = eval_value_current_particle
 
-                        if current_best_eval > eval_value_current_particle:
-                            current_best_eval = eval_value_current_particle
-                            current_best = copy.deepcopy(self.particles_swarm[index_particle])
+                        if self.eval_value_best_iteration > eval_value_current_particle:
+                            self.eval_value_best_iteration = eval_value_current_particle
+                            self.best_iteration = copy.deepcopy(self.particles_swarm[index_particle])
 
                 # self.execute_threads(range(self.particles_swarm_dimensions[0]), self.process_particle)
                 # self.eval_values_personal_best_particles)
@@ -434,11 +465,11 @@ class PSOAlgorithm:
                         self.eval_value_global_best_particles = self.eval_values_personal_best_particles[index_particle]
 
                     # current_eval = self.evaluation_function(particle=self.particles_swarm[index_particle], data_matrix=self.data_matrix)
-                    # if current_best_eval > current_eval:
-                    #     current_best_eval = current_eval
-                    #     current_best = copy.deepcopy(self.particles_swarm[index_particle])
+                    # if self.eval_value_best_iteration > current_eval:
+                    #     self.eval_value_best_iteration = current_eval
+                    #     self.best_iteration= copy.deepcopy(self.particles_swarm[index_particle])
 
-                print(current_best_eval)
+                print(self.eval_value_best_iteration)
                 # print(self.velocities_particles_swarm)
 
                 if sys.version_info.major == 3 and sys.version_info.minor >= 7:
