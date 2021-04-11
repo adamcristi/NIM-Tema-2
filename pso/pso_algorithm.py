@@ -7,7 +7,7 @@ from datetime import datetime
 from utils.coverage_check import fast_coverage_check
 from path import LOGS_PATH, name
 
-MAX_WORKERS = 8  # 12
+MAX_WORKERS = 12
 
 
 class PSOAlgorithm:
@@ -53,6 +53,25 @@ class PSOAlgorithm:
         self.runs_minimum_coverage_personal_best = []
         self.runs_is_full_minimum_coverage_personal_best = []
 
+        self.inertia_max = 0.9
+        self.inertia_min = 0.4
+        self.inertia_diff = self.inertia_max - self.inertia_min
+
+        self.species_count = 5
+        self.species_indecies = np.cumsum([particles / self.species_count for _ in range(self.species_count)])
+
+        self.iws_functions = [self.iws_1, self.iws_2, self.iws_3, self.iws_2, self.iws_1]
+
+        self.current_iteration = 0
+
+        self.ro = 1
+
+        self.best_successes = 0
+        self.best_failures = 0
+
+        self.best_suc_threshold = 5
+        self.best_fail_threshold = 5
+
 ########################################################################################################################
 # Initialization #
 
@@ -80,33 +99,46 @@ class PSOAlgorithm:
 
         self.personal_best_particles_swarm = copy.deepcopy(self.particles_swarm)
 
-        self.global_best_particles_swarm = self.particles_swarm[0]
-        eval_value_global_best_particles_swarm = self.evaluation_function(particle=self.particles_swarm[0],
-                                                                          data_matrix=self.data_matrix)
+        self.global_best_particles_swarm = copy.deepcopy(self.particles_swarm[0])
+        self.eval_values_personal_best_particles = self.evaluation_function(particle=self.particles_swarm[0],
+                                                                            data_matrix=self.data_matrix)
 
         for index_particle in range(1, self.particles_swarm_dimensions[0]):
             eval_value_current_particle = self.evaluation_function(particle=self.particles_swarm[index_particle],
                                                                    data_matrix=self.data_matrix)
 
-            if eval_value_current_particle < eval_value_global_best_particles_swarm:
-                self.global_best_particles_swarm = self.particles_swarm[index_particle]
-                eval_value_global_best_particles_swarm = eval_value_current_particle
+            if eval_value_current_particle < self.eval_values_personal_best_particles:
+                self.global_best_particles_swarm = copy.deepcopy(self.particles_swarm[index_particle])
+                self.eval_values_personal_best_particles = eval_value_current_particle
 
     def initialise_velocity(self):
         self.velocities_particles_swarm = np.random.uniform(low=self.min_velocity, high=self.max_velocity,
                                                             size=self.particles_swarm_dimensions)
 
 ########################################################################################################################
+# Inertia schemes #
+
+    def iws_1(self):
+        return self.inertia_max - self.inertia_diff * (self.current_iteration / self.num_iterations)
+
+    def iws_2(self):
+        return 0.5 * (1 + np.random.rand())
+
+    # this is 4 in the paper
+    def iws_3(self):
+        return self.inertia
+
+########################################################################################################################
 # Updating #
 
-    def update_particle_velocity(self, index_particle):
+    def update_particle_velocity(self, index_particle, inertia_function):
         for dimension in range(len(self.particles_swarm[index_particle])):
             rand_1 = np.random.random()
             rand_2 = np.random.random()
 
             current_velocity = self.velocities_particles_swarm[index_particle][dimension]
 
-            updated_velocity = self.inertia * current_velocity + \
+            updated_velocity = inertia_function() * current_velocity + \
                                self.acc_fac_1 * rand_1 * (
                                        self.personal_best_particles_swarm[index_particle][dimension] -
                                        self.particles_swarm[index_particle][dimension]) + \
@@ -115,17 +147,41 @@ class PSOAlgorithm:
 
             self.velocities_particles_swarm[index_particle][dimension] = updated_velocity
 
+    def update_global_best_particle_velocity(self, index_particle, inertia_function):
+        for dimension in range(len(self.particles_swarm[index_particle])):
+
+            current_velocity = self.velocities_particles_swarm[index_particle][dimension]
+
+            updated_velocity = inertia_function() * current_velocity \
+                               - self.particles_swarm[index_particle][dimension] \
+                               + self.global_best_particles_swarm[dimension]
+
+
+            # rand_1 = np.random.random()
+            # rand_2 = np.random.random()
+            #
+            # current_velocity = self.velocities_particles_swarm[index_particle][dimension]
+            #
+            # updated_velocity = inertia_function() * current_velocity + \
+            #                    self.acc_fac_1 * rand_1 * (
+            #                            self.personal_best_particles_swarm[index_particle][dimension] -
+            #                            self.particles_swarm[index_particle][dimension]) + \
+            #                    self.acc_fac_2 * rand_2 * (self.global_best_particles_swarm[dimension] -
+            #                                               self.particles_swarm[index_particle][dimension])
+
+            self.velocities_particles_swarm[index_particle][dimension] = updated_velocity
+
     def update_particle_position(self, index_particle):
         for dimension in range(len(self.particles_swarm[index_particle])):
             rand_value = np.random.random()
 
-            sigmoid_value_current_velocity = 1 / (
-                    1 + np.exp(-self.velocities_particles_swarm[index_particle][dimension]))
+            sigmoid_value_current_velocity = 2 * np.abs(1 / (
+                    1 + np.exp(-self.velocities_particles_swarm[index_particle][dimension])) - 0.5)
 
             if rand_value < sigmoid_value_current_velocity:
-                self.particles_swarm[index_particle][dimension] = 1
+                self.particles_swarm[index_particle][dimension] = 1 - self.particles_swarm[index_particle][dimension]
             else:
-                self.particles_swarm[index_particle][dimension] = 0
+                self.particles_swarm[index_particle][dimension] = self.particles_swarm[index_particle][dimension]
 
 ########################################################################################################################
 # Multithreading #
@@ -172,7 +228,18 @@ class PSOAlgorithm:
                             workers -= 1
 
     def process_particle(self, index_particle):
-        self.update_particle_velocity(index_particle)
+
+        # function_index = 0
+        # for index in self.species_indecies:
+        #     if index > index_particle:
+        #         function_index = index
+        #         break
+
+        if np.all(self.particles_swarm[index_particle] == self.global_best_particles_swarm):
+
+            pass
+        else:
+            self.update_particle_velocity(index_particle, self.iws_functions[2])
 
         self.update_particle_position(index_particle)
 
@@ -239,10 +306,10 @@ class PSOAlgorithm:
 
         info = f"coverage_global_best = {self.coverage_global_best}{delimiter}"
         info += f"is_full_coverage_global_best = {self.is_full_coverage_global_best}{delimiter}"
-        info += f"evaluation_value_global_best = {self.evaluation_value_global_best:.6f}{delimiter}"
+        info += f"evaluation_value_global_best = {self.evaluation_value_global_best:.14f}{delimiter}"
         info += f"minimum_coverage_personal_best = {self.minimum_coverage_personal_best}{delimiter}"
         info += f"is_full_minimum_coverage_personal_best = {self.is_full_minimum_coverage_personal_best}{delimiter}"
-        info += f"evaluation_value_minimum_coverage_personal_best = {self.evaluation_value_minimum_coverage_personal_best:.6f}{delimiter}"
+        info += f"evaluation_value_minimum_coverage_personal_best = {self.evaluation_value_minimum_coverage_personal_best:.14f}{delimiter}"
 
         return info
 
@@ -301,6 +368,8 @@ class PSOAlgorithm:
             else:
                 print(f"\nRun {run}")
 
+            self.current_iteration = 0
+
             self.write_number_run(run)
 
             self.initialise_particles()
@@ -311,6 +380,7 @@ class PSOAlgorithm:
             else:
                 start = time.time()
 
+            self.eval_values_personal_best_particles = []
             for index_particle in range(self.particles_swarm_dimensions[0]):
                 self.eval_values_personal_best_particles.append(self.evaluation_function(particle=self.personal_best_particles_swarm[index_particle],
                                                                 data_matrix=self.data_matrix))
@@ -318,7 +388,18 @@ class PSOAlgorithm:
             self.eval_value_global_best_particles = self.evaluation_function(particle=self.global_best_particles_swarm,
                                                                              data_matrix=self.data_matrix)
 
+            # coverages_personal_best_particles_swarm = [
+            #     np.count_nonzero(self.personal_best_particles_swarm[index_particle])
+            #     for index_particle in range(self.particles_swarm_dimensions[0])]
+            #
+            # print(np.count_nonzero(self.global_best_particles_swarm))
+            # print(self.eval_value_global_best_particles)
+            # print(coverages_personal_best_particles_swarm)
+            # print(self.eval_values_personal_best_particles)
+
             for iteration in range(self.num_iterations):
+
+                self.current_iteration = iteration
 
                 #for index_particle in range(self.particles_swarm_dimensions[0]):
                 #    self.update_particle_velocity(index_particle)
@@ -332,13 +413,15 @@ class PSOAlgorithm:
                 #        self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
                 #        self.eval_values_personal_best_particles[index_particle] = eval_value_current_particle
 
-                self.execute_threads(range(self.particles_swarm_dimensions[0]), self.process_particle,
-                                     self.eval_values_personal_best_particles)
+                self.execute_threads(range(self.particles_swarm_dimensions[0]), self.process_particle)
+                                     # self.eval_values_personal_best_particles)
 
                 for index_particle in range(self.particles_swarm_dimensions[0]):
                     if self.eval_values_personal_best_particles[index_particle] < self.eval_value_global_best_particles:
                         self.global_best_particles_swarm = self.personal_best_particles_swarm[index_particle]
                         self.eval_value_global_best_particles = self.eval_values_personal_best_particles[index_particle]
+
+                # print(self.velocities_particles_swarm)
 
                 if sys.version_info.major == 3 and sys.version_info.minor >= 7:
                     end = time.time_ns()
@@ -346,6 +429,15 @@ class PSOAlgorithm:
                 else:
                     end = time.time()
                     print(f"Iteration {iteration} - Elapsed time: {(end - start)} seconds.")
+
+                # coverages_personal_best_particles_swarm = [
+                #     np.count_nonzero(self.personal_best_particles_swarm[index_particle])
+                #     for index_particle in range(self.particles_swarm_dimensions[0])]
+                #
+                # print(np.count_nonzero(self.global_best_particles_swarm))
+                # print(self.eval_value_global_best_particles)
+                # print(coverages_personal_best_particles_swarm)
+                # print(self.eval_values_personal_best_particles)
 
                 self.write_log_info_iteration(iteration)
 
