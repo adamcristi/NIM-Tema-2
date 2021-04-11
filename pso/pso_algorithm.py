@@ -3,8 +3,9 @@ import copy
 import sys
 import time
 import concurrent.futures
-
+from datetime import datetime
 from utils.coverage_check import fast_coverage_check
+from path import LOGS_PATH, name
 
 MAX_WORKERS = 8  # 12
 
@@ -12,7 +13,7 @@ MAX_WORKERS = 8  # 12
 class PSOAlgorithm:
 
     def __init__(self, data_matrix, eval_function, runs=1, iterations=30, particles=30, inertia_weight=1,
-                 acceleration_factor_1=2.05, acceleration_factor_2=2.05):
+                 acceleration_factor_1=2.05, acceleration_factor_2=2.05, experiment_type="_experiment_pso_"):  # experiment_type="_experiment_pso_2_"
         # particles = data_matrix
         # best_particle = [particles_like]
         # best_swarm = particle_like
@@ -32,9 +33,28 @@ class PSOAlgorithm:
         self.global_best_particles_swarm = None  # (dimensions (1, 2904))
 
         self.velocities_particles_swarm = None  # (dimensions (30, 2904))
-
         self.min_velocity = -6
         self.max_velocity = 6
+
+        self.eval_value_global_best_particles = None  # (dimension 1))
+        self.eval_values_personal_best_particles = []  # (dimension (30,))
+
+        self.experiment_name = name + experiment_type + str(datetime.timestamp(datetime.now())) + ".txt"
+
+        self.coverage_global_best = None
+        self.is_full_coverage_global_best = None
+        self.evaluation_value_global_best = None
+        self.minimum_coverage_personal_best = None
+        self.is_full_minimum_coverage_personal_best = None
+        self.evaluation_value_minimum_coverage_personal_best = None
+
+        self.runs_coverage_global_best = []
+        self.runs_is_full_coverage_global_best = []
+        self.runs_minimum_coverage_personal_best = []
+        self.runs_is_full_minimum_coverage_personal_best = []
+
+########################################################################################################################
+# Initialization #
 
     # uniformly distributed
     def initialise_particles(self):
@@ -53,8 +73,9 @@ class PSOAlgorithm:
             np.random.shuffle(ones_and_zeros_particle)
             self.particles_swarm.append(ones_and_zeros_particle)
 
-        self.particles_swarm = np.array(self.particles_swarm) 
+        self.particles_swarm = np.array(self.particles_swarm)
 
+        # Old initialization
         # self.particles_swarm = np.random.randint(0, 2, self.particles_swarm_dimensions)
 
         self.personal_best_particles_swarm = copy.deepcopy(self.particles_swarm)
@@ -74,6 +95,9 @@ class PSOAlgorithm:
     def initialise_velocity(self):
         self.velocities_particles_swarm = np.random.uniform(low=self.min_velocity, high=self.max_velocity,
                                                             size=self.particles_swarm_dimensions)
+
+########################################################################################################################
+# Updating #
 
     def update_particle_velocity(self, index_particle):
         for dimension in range(len(self.particles_swarm[index_particle])):
@@ -102,6 +126,9 @@ class PSOAlgorithm:
                 self.particles_swarm[index_particle][dimension] = 1
             else:
                 self.particles_swarm[index_particle][dimension] = 0
+
+########################################################################################################################
+# Multithreading #
 
     def execute_threads(self, array, function, *func_args):
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as th_executor:
@@ -144,21 +171,137 @@ class PSOAlgorithm:
                             # Mark the worker as free
                             workers -= 1
 
-    def process_particle(self, index_particle, personal_best_values):
+    def process_particle(self, index_particle):
         self.update_particle_velocity(index_particle)
 
         self.update_particle_position(index_particle)
 
-        eval_value_current_particle = self.evaluation_function(
-            particle=self.particles_swarm[index_particle],
-            data_matrix=self.data_matrix)
+        eval_value_current_particle = self.evaluation_function(particle=self.particles_swarm[index_particle],
+                                                               data_matrix=self.data_matrix)
 
-        if eval_value_current_particle < personal_best_values[index_particle]:
+        if eval_value_current_particle < self.eval_values_personal_best_particles[index_particle]:
             self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
-            personal_best_values[index_particle] = eval_value_current_particle
+            self.eval_values_personal_best_particles[index_particle] = eval_value_current_particle
+
+    #def process_particle(self, index_particle, personal_best_values):
+    #    self.update_particle_velocity(index_particle)
+    #
+    #    self.update_particle_position(index_particle)
+    #
+    #    eval_value_current_particle = self.evaluation_function(
+    #        particle=self.particles_swarm[index_particle],
+    #        data_matrix=self.data_matrix)
+    #
+    #    if eval_value_current_particle < personal_best_values[index_particle]:
+    #        self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
+    #        personal_best_values[index_particle] = eval_value_current_particle
+
+########################################################################################################################
+# Logging #
+
+    def write_log_parameters(self):
+        with open(LOGS_PATH + self.experiment_name[:-4] + "_parameters.txt", "w") as file:
+            parameters = f"{self.experiment_name[:-4]}\n" \
+                         + f"number_particles={self.particles_swarm_dimensions[0]}\n" \
+                         + f"runs={self.num_runs}\n" \
+                         + f"iterations={self.num_iterations}\n" \
+                         + f"eval_particle={self.evaluation_function.__name__}\n" \
+                         + f"inertia_weight={self.inertia}\n" \
+                         + f"acceleration_factor_1={self.acc_fac_1}\n" \
+                         + f"acceleration_factor_2={self.acc_fac_2}\n" \
+                         + f"minimum_velocity={self.min_velocity}\n" \
+                         + f"maximum_velocity={self.max_velocity}\n"
+
+            file.write(parameters)
+
+    def write_number_run(self, number_run):
+        with open(LOGS_PATH + self.experiment_name[:-4] + "_iterations.txt", "a+") as file:
+            if number_run == 0:
+                file.write(f"Run {number_run} \n\n")
+            else:
+                file.write(f"\nRun {number_run} \n\n")
+
+    def get_log_info(self):
+        self.coverage_global_best = np.count_nonzero(self.global_best_particles_swarm)
+        self.is_full_coverage_global_best = fast_coverage_check(self.global_best_particles_swarm, self.data_matrix)
+        self.evaluation_value_global_best = self.eval_value_global_best_particles
+
+        coverages_personal_best_particles_swarm = [np.count_nonzero(self.personal_best_particles_swarm[index_particle])
+                                                   for index_particle in range(self.particles_swarm_dimensions[0])]
+
+        self.minimum_coverage_personal_best = np.min(coverages_personal_best_particles_swarm)
+        index_minimum_coverage_personal_best = np.argmin(coverages_personal_best_particles_swarm)
+        self.is_full_minimum_coverage_personal_best = fast_coverage_check(self.personal_best_particles_swarm[index_minimum_coverage_personal_best],
+                                                                          self.data_matrix)
+        self.evaluation_value_minimum_coverage_personal_best = self.eval_values_personal_best_particles[index_minimum_coverage_personal_best]
+
+        delimiter = " ;" + " " * 4
+
+        info = f"coverage_global_best = {self.coverage_global_best}{delimiter}"
+        info += f"is_full_coverage_global_best = {self.is_full_coverage_global_best}{delimiter}"
+        info += f"evaluation_value_global_best = {self.evaluation_value_global_best:.6f}{delimiter}"
+        info += f"minimum_coverage_personal_best = {self.minimum_coverage_personal_best}{delimiter}"
+        info += f"is_full_minimum_coverage_personal_best = {self.is_full_minimum_coverage_personal_best}{delimiter}"
+        info += f"evaluation_value_minimum_coverage_personal_best = {self.evaluation_value_minimum_coverage_personal_best:.6f}{delimiter}"
+
+        return info
+
+    def write_log_info_iteration(self, number_iteration):
+        info_iteration = f"Iteration {number_iteration}: "
+        info_iteration += self.get_log_info()
+
+        with open(LOGS_PATH + self.experiment_name[:-4] + "_iterations.txt", "a+") as file:
+            file.write(info_iteration + "\n")
+
+    def write_log_info_run(self, number_run):
+        info_run = f"Run {number_run}: "
+        info_run += self.get_log_info()
+
+        with open(LOGS_PATH + self.experiment_name[:-4] + "_runs.txt", "a+") as file:
+            file.write(info_run + "\n")
+
+        self.runs_coverage_global_best.append(self.coverage_global_best)
+        self.runs_is_full_coverage_global_best.append(self.is_full_coverage_global_best)
+        self.runs_minimum_coverage_personal_best.append(self.minimum_coverage_personal_best)
+        self.runs_is_full_minimum_coverage_personal_best.append(self.is_full_minimum_coverage_personal_best)
+
+    def write_log_info_runs(self):
+        info_runs = f"\n\nRuns: "
+
+        index_min_run_coverage_global_best = np.argmin(self.runs_coverage_global_best)
+        index_min_run_minimum_coverage_personal_best = np.argmin(self.runs_minimum_coverage_personal_best)
+
+        delimiter = " ;" + " " * 4
+
+        info_runs += f"is_full_min_coverage_global_best = {self.runs_is_full_coverage_global_best[index_min_run_coverage_global_best]}{delimiter}"
+        info_runs += f"min_coverage_global_best = {self.runs_coverage_global_best[index_min_run_coverage_global_best]}{delimiter}"
+        info_runs += f"max_coverage_global_best = {np.max(self.runs_coverage_global_best)}{delimiter}"
+        info_runs += f"mean_coverage_global_best = {np.mean(self.runs_coverage_global_best)}{delimiter}"
+        info_runs += f"std_coverage_global_best = {np.std(self.runs_coverage_global_best)}{delimiter}"
+
+        info_runs += f"\n      "
+        info_runs += f"is_full_min_run_minimum_coverage_personal_best = {self.runs_is_full_minimum_coverage_personal_best[index_min_run_minimum_coverage_personal_best]}{delimiter}"
+        info_runs += f"min_run_minimum_coverage_personal_best = {self.runs_minimum_coverage_personal_best[index_min_run_minimum_coverage_personal_best]}{delimiter}"
+        info_runs += f"max_coverage_global_best = {np.max(self.runs_minimum_coverage_personal_best)}{delimiter}"
+        info_runs += f"mean_coverage_global_best = {np.mean(self.runs_minimum_coverage_personal_best)}{delimiter}"
+        info_runs += f"std_coverage_global_best = {np.std(self.runs_minimum_coverage_personal_best)}{delimiter}"
+
+        with open(LOGS_PATH + self.experiment_name[:-4] + "_runs.txt", "a+") as file:
+            file.write(info_runs + "\n")
+
+########################################################################################################################
+# Execution #
 
     def execute_algorithm(self):
+        self.write_log_parameters()
+
         for run in range(self.num_runs):
+            if run == 0:
+                print(f"Run {run}")
+            else:
+                print(f"\nRun {run}")
+
+            self.write_number_run(run)
 
             self.initialise_particles()
             self.initialise_velocity()
@@ -168,37 +311,34 @@ class PSOAlgorithm:
             else:
                 start = time.time()
 
-            personal_best_values = []
             for index_particle in range(self.particles_swarm_dimensions[0]):
-                personal_best_values.append(self.evaluation_function(
-                    particle=self.personal_best_particles_swarm[index_particle],
-                    data_matrix=self.data_matrix))
+                self.eval_values_personal_best_particles.append(self.evaluation_function(particle=self.personal_best_particles_swarm[index_particle],
+                                                                data_matrix=self.data_matrix))
 
-            eval_value_global_best = self.evaluation_function(particle=self.global_best_particles_swarm,
-                                                              data_matrix=self.data_matrix)
+            self.eval_value_global_best_particles = self.evaluation_function(particle=self.global_best_particles_swarm,
+                                                                             data_matrix=self.data_matrix)
 
             for iteration in range(self.num_iterations):
 
-                # for index_particle in range(self.particles_swarm_dimensions[0]):
-                #     self.update_particle_velocity(index_particle)
+                #for index_particle in range(self.particles_swarm_dimensions[0]):
+                #    self.update_particle_velocity(index_particle)
                 #
-                #     self.update_particle_position(index_particle)
+                #    self.update_particle_position(index_particle)
                 #
-                #     eval_value_current_particle = self.evaluation_function(
-                #         particle=self.particles_swarm[index_particle],
-                #         data_matrix=self.data_matrix)
+                #    eval_value_current_particle = self.evaluation_function(particle=self.particles_swarm[index_particle],
+                #                                                           data_matrix=self.data_matrix)
                 #
-                #     if eval_value_current_particle < personal_best_values[index_particle]:
-                #         self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
-                #         personal_best_values[index_particle] = eval_value_current_particle
+                #    if eval_value_current_particle < self.eval_values_personal_best_particles[index_particle]:
+                #        self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
+                #        self.eval_values_personal_best_particles[index_particle] = eval_value_current_particle
 
                 self.execute_threads(range(self.particles_swarm_dimensions[0]), self.process_particle,
-                                     personal_best_values)
+                                     self.eval_values_personal_best_particles)
 
                 for index_particle in range(self.particles_swarm_dimensions[0]):
-                    if personal_best_values[index_particle] < eval_value_global_best:
+                    if self.eval_values_personal_best_particles[index_particle] < self.eval_value_global_best_particles:
                         self.global_best_particles_swarm = self.personal_best_particles_swarm[index_particle]
-                        eval_value_global_best = personal_best_values[index_particle]
+                        self.eval_value_global_best_particles = self.eval_values_personal_best_particles[index_particle]
 
                 if sys.version_info.major == 3 and sys.version_info.minor >= 7:
                     end = time.time_ns()
@@ -207,11 +347,18 @@ class PSOAlgorithm:
                     end = time.time()
                     print(f"Iteration {iteration} - Elapsed time: {(end - start)} seconds.")
 
-        print(np.count_nonzero(self.global_best_particles_swarm))
-        print(fast_coverage_check(self.global_best_particles_swarm, self.data_matrix))
-        print("")
-        for index_particle in range(self.particles_swarm_dimensions[0]):
-            print(np.count_nonzero(self.personal_best_particles_swarm[index_particle]))
-            print(fast_coverage_check(self.personal_best_particles_swarm[index_particle], self.data_matrix))
+                self.write_log_info_iteration(iteration)
+
+            self.write_log_info_run(run)
+
+        self.write_log_info_runs()
+
+        # print(np.count_nonzero(self.global_best_particles_swarm))
+        # print(fast_coverage_check(self.global_best_particles_swarm, self.data_matrix))
+        # print("")
         # for index_particle in range(self.particles_swarm_dimensions[0]):
-        #     print(np.count_nonzero(self.particles_swarm[index_particle]))
+        #     print(np.count_nonzero(self.personal_best_particles_swarm[index_particle]))
+        #     print(fast_coverage_check(self.personal_best_particles_swarm[index_particle], self.data_matrix))
+        # # for index_particle in range(self.particles_swarm_dimensions[0]):
+        # #     print(np.count_nonzero(self.particles_swarm[index_particle]))
+

@@ -23,12 +23,13 @@ else:
 
 pso = PSOAlgorithm(data_matrix=data_matrix,
                    eval_function=eval_particle_1,
-                   runs=1,
+                   runs=2,
                    iterations=100,
                    particles=50,
-                   inertia_weight=0.5,
-                   acceleration_factor_1=2.05,
-                   acceleration_factor_2=2.05)
+                   inertia_weight=0.9,
+                   acceleration_factor_1=2,
+                   acceleration_factor_2=2,
+                   experiment_type="_experiment_pso_")
 
 pso.execute_algorithm()
 
