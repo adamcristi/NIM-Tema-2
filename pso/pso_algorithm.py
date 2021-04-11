@@ -7,14 +7,14 @@ from datetime import datetime
 from utils.coverage_check import fast_coverage_check
 from path import LOGS_PATH, name
 
-MAX_WORKERS = 12
+# MAX_WORKERS = 12
 
 
 class PSOAlgorithm:
 
     def __init__(self, data_matrix, eval_function, runs=1, iterations=30, particles=30, inertia_weight=1,
                  acceleration_factor_1=2.05, acceleration_factor_2=2.05,
-                 experiment_type="_experiment_pso_"):  # experiment_type="_experiment_pso_2_"
+                 experiment_type="_experiment_pso_", inertia_type="soft"):  # experiment_type="_experiment_pso_2_"
         # particles = data_matrix
         # best_particle = [particles_like]
         # best_swarm = particle_like
@@ -68,12 +68,14 @@ class PSOAlgorithm:
         self.inertia_min = 0.2
         self.inertia_diff = self.inertia_max - self.inertia_min
 
-        # self.species_count = 5
-        # self.species_indecies = np.cumsum([particles / self.species_count for _ in range(self.species_count)])
+        self.species_count = 5
+        self.species_indecies = np.cumsum([particles / self.species_count for _ in range(self.species_count)]).astype(np.int)
 
-        self.iws_functions = [self.iws_1, self.iws_2, self.iws_3, self.iws_4]
+        self.iws_functions = [self.iws_1, self.iws_2, self.iws_3, self.iws_4, self.iws_3]
 
         self.current_iteration = 0
+
+        self.inertia_type = inertia_type
 
     ########################################################################################################################
     # Initialization #
@@ -138,15 +140,16 @@ class PSOAlgorithm:
     ########################################################################################################################
     # Updating #
 
-    def update_particle_velocity(self, index_particle):
+    def update_particle_velocity(self, index_particle, inertia_function=None):
         for dimension in range(len(self.particles_swarm[index_particle])):
             rand_1 = np.random.random()
             rand_2 = np.random.random()
 
             current_velocity = self.velocities_particles_swarm[index_particle][dimension]
 
-            rand_3 = np.random.randint(0, 4)
-            inertia_function = self.iws_functions[rand_3]
+            if inertia_function is None:
+                rand_3 = np.random.randint(0, 4)
+                inertia_function = self.iws_functions[rand_3]
 
             updated_velocity = inertia_function() * current_velocity + \
                                self.acc_fac_1 * rand_1 * (
@@ -248,7 +251,7 @@ class PSOAlgorithm:
         if np.all(self.particles_swarm[index_particle] == self.global_best_particles_swarm):
             print("SAME HERE")
 
-        self.update_particle_velocity(index_particle, self.iws_functions[2])
+        self.update_particle_velocity(index_particle)
 
         self.update_particle_position(index_particle)
 
@@ -286,7 +289,8 @@ class PSOAlgorithm:
                          + f"acceleration_factor_1={self.acc_fac_1}\n" \
                          + f"acceleration_factor_2={self.acc_fac_2}\n" \
                          + f"minimum_velocity={self.min_velocity}\n" \
-                         + f"maximum_velocity={self.max_velocity}\n"
+                         + f"maximum_velocity={self.max_velocity}\n" \
+                         + f"inertia_assignation_type={self.inertia_type}\n"
 
             file.write(parameters)
 
@@ -438,7 +442,18 @@ class PSOAlgorithm:
                 self.eval_value_best_iteration = self.evaluation_function(particle=self.best_iteration, data_matrix=self.data_matrix)
 
                 for index_particle in range(self.particles_swarm_dimensions[0]):
-                    self.update_particle_velocity(index_particle)
+
+                    if self.inertia_type == "soft":
+                        self.update_particle_velocity(index_particle)
+
+                    else:
+                        function_index = 0
+                        for index, boundary in enumerate(self.species_indecies):
+                            if index_particle < boundary:
+                                function_index = index
+                                break
+
+                        self.update_particle_velocity(index_particle, self.iws_functions[function_index])
 
                     self.update_particle_position(index_particle)
 
@@ -469,7 +484,7 @@ class PSOAlgorithm:
                     #     self.eval_value_best_iteration = current_eval
                     #     self.best_iteration= copy.deepcopy(self.particles_swarm[index_particle])
 
-                print(self.eval_value_best_iteration)
+                # print(self.eval_value_best_iteration)
                 # print(self.velocities_particles_swarm)
 
                 if sys.version_info.major == 3 and sys.version_info.minor >= 7:

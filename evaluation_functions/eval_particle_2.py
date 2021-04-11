@@ -1,10 +1,11 @@
-from utils.coverage_check import fast_coverage_check
+from utils.coverage_check import detailed_coverage_check
 import numpy as np
 
 
 def eval_particle_2(particle, data_matrix):
-    full_coverage = fast_coverage_check(particle, data_matrix)
+    counts, full_coverage = detailed_coverage_check(particle, data_matrix)
 
-    ratio = np.count_nonzero(particle) / data_matrix.shape[1]
+    alpha = 0.1
 
-    return ratio if full_coverage else 1 - ratio
+    return (alpha * np.count_nonzero(particle) / data_matrix.shape[1] +
+            (1 - alpha) * (1 - np.count_nonzero(counts) / data_matrix.shape[0]))

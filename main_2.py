@@ -5,10 +5,8 @@ from pso.pso_algorithm_2 import PSOAlgorithmIWS
 from utils.preprocess_data import preprocess_data
 from utils.read_data import read_data
 from evaluation_functions.eval_particle_1 import eval_particle_1
-from evaluation_functions.eval_particle_2 import eval_particle_2
-from evaluation_functions.eval_particle_3 import eval_particle_3
 
-from path import LOGS_PATH, path, name
+from path import path
 
 data, n_samples, n_candidates, total_used_sum = read_data(path)
 
