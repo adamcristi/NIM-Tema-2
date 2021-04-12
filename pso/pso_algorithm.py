@@ -184,6 +184,18 @@ class PSOAlgorithm:
     #
     #         self.velocities_particles_swarm[index_particle][dimension] = updated_velocity
 
+    # def update_particle_position(self, index_particle):
+    #     for dimension in range(len(self.particles_swarm[index_particle])):
+    #         rand_value = np.random.random()
+    #
+    #         sigmoid_value_current_velocity = 2 * np.abs(1 / (
+    #                 1 + np.exp(-self.velocities_particles_swarm[index_particle][dimension])) - 0.5)
+    #
+    #         if rand_value < sigmoid_value_current_velocity:
+    #             self.particles_swarm[index_particle][dimension] = 1 - self.particles_swarm[index_particle][dimension]
+    #         else:
+    #             self.particles_swarm[index_particle][dimension] = self.particles_swarm[index_particle][dimension]
+
     def update_particle_position(self, index_particle):
         for dimension in range(len(self.particles_swarm[index_particle])):
             rand_value = np.random.random()
@@ -192,88 +204,88 @@ class PSOAlgorithm:
                     1 + np.exp(-self.velocities_particles_swarm[index_particle][dimension])) - 0.5)
 
             if rand_value < sigmoid_value_current_velocity:
-                self.particles_swarm[index_particle][dimension] = 1 - self.particles_swarm[index_particle][dimension]
+                self.particles_swarm[index_particle][dimension] = 1
             else:
-                self.particles_swarm[index_particle][dimension] = self.particles_swarm[index_particle][dimension]
+                self.particles_swarm[index_particle][dimension] = 0
 
     ########################################################################################################################
     # Multithreading #
 
-    def execute_threads(self, array, function, *func_args):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as th_executor:
-
-            arr_size = len(array)
-
-            workers = 0
-            tasks = []
-
-            still_running = True
-            element_index = 0
-
-            while still_running:
-                full_usage = True
-
-                # If is not the end of population
-                if element_index < arr_size:
-
-                    if workers < MAX_WORKERS:
-                        full_usage = False
-                        workers += 1
-
-                        tasks.append(th_executor.submit(function, element_index, *func_args))
-
-                        element_index += 1
-
-                if full_usage:
-
-                    done, not_done = concurrent.futures.wait(tasks, return_when=concurrent.futures.FIRST_COMPLETED)
-
-                    # Safety mechanism
-                    if len(not_done) == 0 and len(done) == 0:
-                        still_running = False
-
-                    else:
-                        for future in done:
-                            # Remove from active tasks
-                            tasks.remove(future)
-
-                            # Mark the worker as free
-                            workers -= 1
-
-    def process_particle(self, index_particle):
-
-        # function_index = 0
-        # for index in self.species_indecies:
-        #     if index > index_particle:
-        #         function_index = index
-        #         break
-
-        if np.all(self.particles_swarm[index_particle] == self.global_best_particles_swarm):
-            print("SAME HERE")
-
-        self.update_particle_velocity(index_particle)
-
-        self.update_particle_position(index_particle)
-
-        eval_value_current_particle = self.evaluation_function(particle=self.particles_swarm[index_particle],
-                                                               data_matrix=self.data_matrix)
-
-        if eval_value_current_particle < self.eval_values_personal_best_particles[index_particle]:
-            self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
-            self.eval_values_personal_best_particles[index_particle] = eval_value_current_particle
-
-    # def process_particle(self, index_particle, personal_best_values):
-    #    self.update_particle_velocity(index_particle)
+    # def execute_threads(self, array, function, *func_args):
+    #     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as th_executor:
     #
-    #    self.update_particle_position(index_particle)
+    #         arr_size = len(array)
     #
-    #    eval_value_current_particle = self.evaluation_function(
-    #        particle=self.particles_swarm[index_particle],
-    #        data_matrix=self.data_matrix)
+    #         workers = 0
+    #         tasks = []
     #
-    #    if eval_value_current_particle < personal_best_values[index_particle]:
-    #        self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
-    #        personal_best_values[index_particle] = eval_value_current_particle
+    #         still_running = True
+    #         element_index = 0
+    #
+    #         while still_running:
+    #             full_usage = True
+    #
+    #             # If is not the end of population
+    #             if element_index < arr_size:
+    #
+    #                 if workers < MAX_WORKERS:
+    #                     full_usage = False
+    #                     workers += 1
+    #
+    #                     tasks.append(th_executor.submit(function, element_index, *func_args))
+    #
+    #                     element_index += 1
+    #
+    #             if full_usage:
+    #
+    #                 done, not_done = concurrent.futures.wait(tasks, return_when=concurrent.futures.FIRST_COMPLETED)
+    #
+    #                 # Safety mechanism
+    #                 if len(not_done) == 0 and len(done) == 0:
+    #                     still_running = False
+    #
+    #                 else:
+    #                     for future in done:
+    #                         # Remove from active tasks
+    #                         tasks.remove(future)
+    #
+    #                         # Mark the worker as free
+    #                         workers -= 1
+    #
+    # def process_particle(self, index_particle):
+    #
+    #     # function_index = 0
+    #     # for index in self.species_indecies:
+    #     #     if index > index_particle:
+    #     #         function_index = index
+    #     #         break
+    #
+    #     if np.all(self.particles_swarm[index_particle] == self.global_best_particles_swarm):
+    #         print("SAME HERE")
+    #
+    #     self.update_particle_velocity(index_particle)
+    #
+    #     self.update_particle_position(index_particle)
+    #
+    #     eval_value_current_particle = self.evaluation_function(particle=self.particles_swarm[index_particle],
+    #                                                            data_matrix=self.data_matrix)
+    #
+    #     if eval_value_current_particle < self.eval_values_personal_best_particles[index_particle]:
+    #         self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
+    #         self.eval_values_personal_best_particles[index_particle] = eval_value_current_particle
+    #
+    # # def process_particle(self, index_particle, personal_best_values):
+    # #    self.update_particle_velocity(index_particle)
+    # #
+    # #    self.update_particle_position(index_particle)
+    # #
+    # #    eval_value_current_particle = self.evaluation_function(
+    # #        particle=self.particles_swarm[index_particle],
+    # #        data_matrix=self.data_matrix)
+    # #
+    # #    if eval_value_current_particle < personal_best_values[index_particle]:
+    # #        self.personal_best_particles_swarm[index_particle] = self.particles_swarm[index_particle]
+    # #        personal_best_values[index_particle] = eval_value_current_particle
 
     ########################################################################################################################
     # Logging #

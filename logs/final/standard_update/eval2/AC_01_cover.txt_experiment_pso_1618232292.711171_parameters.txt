@@ -1,0 +1,11 @@
+AC_01_cover.txt_experiment_pso_1618232292.711171
+number_particles=50
+runs=30
+iterations=100
+eval_particle=eval_particle_2
+inertia_weight=0.2
+acceleration_factor_1=2.05
+acceleration_factor_2=2.05
+minimum_velocity=-6
+maximum_velocity=6
+inertia_assignation_type=soft
