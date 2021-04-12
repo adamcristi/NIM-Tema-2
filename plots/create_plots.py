@@ -16,13 +16,13 @@ import matplotlib.ticker as ticker
 #log_name = "eval_particle_1_soft_best_run_log.txt"
 
 # eval_particle_1 and inertia assigment hard
-#log_name = "eval_particle_1_hard_best_run_log.txt"
+log_name = "eval_particle_1_hard_best_run_log.txt"
 
 # eval_particle_2 and inertia assigment soft
 #log_name = "eval_particle_2_soft_best_run_log.txt"
 
 # eval_particle_2 and inertia assigment hard
-log_name = "eval_particle_2_hard_best_run_log.txt"
+#log_name = "eval_particle_2_hard_best_run_log.txt"
 
 # test
 #log_name = 'test_best_run_log.txt'
@@ -152,7 +152,7 @@ def create_plot():
     ax1.tick_params(axis='y', labelcolor='orange')
     # ax1.set_xticks(np.arange(0, len(coverages_global_best) + 1, step=len(coverages_global_best) / 5))
 
-    step_yticks_ax1 = (np.max(coverages_global_best) - np.min(coverages_global_best)) / 5
+    step_yticks_ax1 = (np.max(coverages_global_best) - np.min(coverages_global_best)) / 17
     ax1.set_yticks(np.around(np.arange(np.min(coverages_global_best), np.max(coverages_global_best) + step_yticks_ax1, step=step_yticks_ax1)))
 
     second_ax1 = ax1.twinx()
@@ -160,11 +160,11 @@ def create_plot():
     line_2 = second_ax1.plot(np.arange(len(evaluation_values_global_best)), evaluation_values_global_best, color='blue', label="Evaluation")
 
     second_ax1.lines[0].set_linestyle("--")
-    second_ax1.set_ylabel('Evaluation', color='blue')
+    second_ax1.set_ylabel('Evaluation', color='blue') #, rotation=270, labelpad=10)
     second_ax1.tick_params(axis='y', labelcolor='blue')
     second_ax1.set_xticks(np.arange(0, len(evaluation_values_global_best) + 1, step=len(evaluation_values_global_best) / 5))
 
-    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 9
+    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 12
     second_ax1.set_yticks(np.around(np.arange(np.min(evaluation_values_global_best), np.max(evaluation_values_global_best) + step_yticks_second_ax1,
                                               step=step_yticks_second_ax1), decimals=5))
 
@@ -186,7 +186,7 @@ def create_plot():
     ax2.tick_params(axis='y', labelcolor='orange')
     # ax2.set_xticks(np.arange(0, len(coverages_best_iteration)+1, step=len(coverages_best_iteration) / 5))
 
-    step_yticks_ax2 = (np.max(coverages_best_iteration) - np.min(coverages_best_iteration)) / 9
+    step_yticks_ax2 = (np.max(coverages_best_iteration) - np.min(coverages_best_iteration)) / 10
     ax2.set_yticks(np.around(np.arange(np.min(coverages_best_iteration), np.max(coverages_best_iteration) + step_yticks_ax2, step=step_yticks_ax2)))
 
     second_ax2 = ax2.twinx()
@@ -194,12 +194,12 @@ def create_plot():
     line_4 = second_ax2.plot(np.arange(len(evaluation_values_best_iteration)), evaluation_values_best_iteration, color='blue', label="Evaluation")
 
     second_ax2.lines[0].set_linestyle("--")
-    second_ax2.set_ylabel('Evaluation', color='blue')
+    second_ax2.set_ylabel('Evaluation', color='blue') #, rotation=270, labelpad=10)
     second_ax2.tick_params(axis='y', labelcolor='blue')
     second_ax2.set_xticks(np.arange(0, len(evaluation_values_best_iteration) + 1, step=len(evaluation_values_best_iteration) / 5))
 
     step_yticks_second_ax2 = (np.max(evaluation_values_best_iteration) - np.min(evaluation_values_best_iteration)) / 15
-    second_ax2.set_yticks(np.around(np.arange(np.min(evaluation_values_best_iteration), np.max(evaluation_values_best_iteration) + step_yticks_second_ax2, step=step_yticks_second_ax2), decimals=5))
+    second_ax2.set_yticks(np.around(np.arange(np.min(evaluation_values_best_iteration), np.max(evaluation_values_best_iteration) + step_yticks_second_ax2, step=step_yticks_second_ax2), decimals=10))
 
     lines_second_plot = line_3 + line_4
     labels_lines_second_plot = [line.get_label() for line in lines_second_plot]
