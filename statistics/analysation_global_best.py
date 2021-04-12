@@ -40,7 +40,7 @@ def analyse_global_best():
                     if 'inertia_assignation_type=soft' in data_file:
                         print('inertia_assignation_type=soft')
                     elif 'inertia_assignation_type=hard' in data_file:
-                        print('inertia_assignation_type=soft')
+                        print('inertia_assignation_type=hard')
 
                 with open(log_path, "r") as fd:
 

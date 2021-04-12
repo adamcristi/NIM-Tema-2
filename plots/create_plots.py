@@ -125,7 +125,7 @@ def create_plot():
     #data_df = np.append(data_df, np.array(evaluation_values_best_iteration).reshape(len(evaluation_values_best_iteration), 1), axis=1)
     #df = pd.DataFrame(data=data_df, columns=["Evaluation Global Best", "Evaluation Current Best"])
 
-    figure, axs = plt.subplots(1, 2, figsize=(9.1, 5.1))
+    figure, axs = plt.subplots(1, 2, figsize=(7.9, 4.4))
     #sns.set_style("darkgrid")
     #print(plt.style.available)
     #plt.style.use("ggplot")
@@ -199,7 +199,7 @@ def create_plot():
     second_ax2.lines[0].set_linestyle("--")
     second_ax2.set_ylabel('Evaluation', color='blue') #, rotation=270, labelpad=10)
     second_ax2.tick_params(axis='y', labelcolor='blue')
-    second_ax2.set_xticks(np.around(np.arange(0, len(evaluation_values_best_iteration) + 1, step=len(evaluation_values_best_iteration) / 16)))
+    second_ax2.set_xticks(np.around(np.arange(0, len(evaluation_values_best_iteration) + 1, step=len(evaluation_values_best_iteration) / 12)))
 
     step_yticks_second_ax2 = (np.max(evaluation_values_best_iteration) - np.min(evaluation_values_best_iteration)) / 15
     second_ax2.set_yticks(np.around(np.arange(np.min(evaluation_values_best_iteration), np.max(evaluation_values_best_iteration) + step_yticks_second_ax2, step=step_yticks_second_ax2), decimals=10))
@@ -223,8 +223,8 @@ def create_plot():
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.suptitle(title_plot)
-    #plt.savefig(os.path.join(PLOTS_PATH, log_name + "_plot.png"))
-    plt.show()
+    plt.savefig(os.path.join(PLOTS_PATH, log_name.split('.')[0] + "_plot.png"))
+    #plt.show()
 
 
     ##sns.lineplot(x=np.arange(len(min_vals))[::5], y=min_vals[::5], color='orange')
