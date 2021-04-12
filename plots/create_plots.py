@@ -27,9 +27,12 @@ log_name = "eval_particle_2_hard_best_run_log.txt"
 # test
 #log_name = 'test_best_run_log.txt'
 
+#update_type = 'mutation_update'
+update_type = 'standard_update'
+
 # LOGS_PATH is a must to be the absolute path to the logs
-LOGS_PATH = os.path.join(os.path.split(os.path.abspath(os.getcwd()))[0], 'plots')
-PLOTS_PATH = os.path.join(os.path.split(os.path.abspath(os.getcwd()))[0], 'plots')
+LOGS_PATH = os.path.join(os.path.split(os.path.abspath(os.getcwd()))[0], 'plots', update_type)
+PLOTS_PATH = os.path.join(os.path.split(os.path.abspath(os.getcwd()))[0], 'plots', update_type)
 
 
 def filter_data(value):
@@ -96,31 +99,31 @@ def create_plot():
             current_is_full_coverage_best_iteration = data_current_iteration[data_current_iteration.index('is_full_coverage_best_iteration') + 1]
             current_evaluation_value_best_iteration = float(data_current_iteration[data_current_iteration.index('evaluation_value_best_iteration') + 1])
 
-            coverages_best_iteration.append(current_coverage_best_iteration)
             if current_is_full_coverage_best_iteration == 'True':
+                coverages_best_iteration.append(current_coverage_best_iteration)
                 are_full_coverages_best_iteration.append('Yes')
+                evaluation_values_best_iteration.append(current_evaluation_value_best_iteration)
             else:
                 are_full_coverages_best_iteration.append('No')
-            evaluation_values_best_iteration.append(current_evaluation_value_best_iteration)
 
             current_iteration = fd.readline().strip()
 
 
-    data_global = np.array(coverages_global_best).reshape(len(coverages_global_best), 1)
-    data_global = np.append(data_global, np.array(evaluation_values_global_best).reshape(len(evaluation_values_global_best), 1), axis=1)
-    df_global = pd.DataFrame(data=data_global, columns=["Coverage Global Best", "Evaluation Global Best"])
+    #data_global = np.array(coverages_global_best).reshape(len(coverages_global_best), 1)
+    #data_global = np.append(data_global, np.array(evaluation_values_global_best).reshape(len(evaluation_values_global_best), 1), axis=1)
+    #df_global = pd.DataFrame(data=data_global, columns=["Coverage Global Best", "Evaluation Global Best"])
 
-    data_best = np.array(coverages_best_iteration).reshape(len(coverages_best_iteration), 1)
-    data_best = np.append(data_best, np.array(evaluation_values_best_iteration).reshape(len(evaluation_values_best_iteration), 1), axis=1)
-    df_best = pd.DataFrame(data=data_best, columns=["Coverage Current Best", "Evaluation Current Best"])
+    #data_best = np.array(coverages_best_iteration).reshape(len(coverages_best_iteration), 1)
+    #data_best = np.append(data_best, np.array(evaluation_values_best_iteration).reshape(len(evaluation_values_best_iteration), 1), axis=1)
+    #df_best = pd.DataFrame(data=data_best, columns=["Coverage Current Best", "Evaluation Current Best"])
 
     #data_df = np.array(coverages_global_best).reshape(len(coverages_global_best), 1)
     #data_df = np.append(data_df, np.array(coverages_best_iteration).reshape(len(coverages_best_iteration), 1), axis=1)
     #df = pd.DataFrame(data=data_df, columns=["Coverage Global Best", "Coverage Current Best"])
 
-    data_df = np.array(evaluation_values_global_best).reshape(len(evaluation_values_global_best), 1)
-    data_df = np.append(data_df, np.array(evaluation_values_best_iteration).reshape(len(evaluation_values_best_iteration), 1), axis=1)
-    df = pd.DataFrame(data=data_df, columns=["Evaluation Global Best", "Evaluation Current Best"])
+    #data_df = np.array(evaluation_values_global_best).reshape(len(evaluation_values_global_best), 1)
+    #data_df = np.append(data_df, np.array(evaluation_values_best_iteration).reshape(len(evaluation_values_best_iteration), 1), axis=1)
+    #df = pd.DataFrame(data=data_df, columns=["Evaluation Global Best", "Evaluation Current Best"])
 
     figure, axs = plt.subplots(1, 2, figsize=(9.1, 5.1))
     #sns.set_style("darkgrid")
@@ -152,7 +155,7 @@ def create_plot():
     ax1.tick_params(axis='y', labelcolor='orange')
     # ax1.set_xticks(np.arange(0, len(coverages_global_best) + 1, step=len(coverages_global_best) / 5))
 
-    step_yticks_ax1 = (np.max(coverages_global_best) - np.min(coverages_global_best)) / 5
+    step_yticks_ax1 = (np.max(coverages_global_best) - np.min(coverages_global_best)) / 10
     ax1.set_yticks(np.around(np.arange(np.min(coverages_global_best), np.max(coverages_global_best) + step_yticks_ax1, step=step_yticks_ax1)))
 
     second_ax1 = ax1.twinx()
@@ -164,7 +167,7 @@ def create_plot():
     second_ax1.tick_params(axis='y', labelcolor='blue')
     second_ax1.set_xticks(np.arange(0, len(evaluation_values_global_best) + 1, step=len(evaluation_values_global_best) / 5))
 
-    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 9
+    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 12
     second_ax1.set_yticks(np.around(np.arange(np.min(evaluation_values_global_best), np.max(evaluation_values_global_best) + step_yticks_second_ax1,
                                               step=step_yticks_second_ax1), decimals=5))
 
@@ -186,7 +189,7 @@ def create_plot():
     ax2.tick_params(axis='y', labelcolor='orange')
     # ax2.set_xticks(np.arange(0, len(coverages_best_iteration)+1, step=len(coverages_best_iteration) / 5))
 
-    step_yticks_ax2 = (np.max(coverages_best_iteration) - np.min(coverages_best_iteration)) / 9
+    step_yticks_ax2 = (np.max(coverages_best_iteration) - np.min(coverages_best_iteration)) / 10
     ax2.set_yticks(np.around(np.arange(np.min(coverages_best_iteration), np.max(coverages_best_iteration) + step_yticks_ax2, step=step_yticks_ax2)))
 
     second_ax2 = ax2.twinx()
@@ -196,7 +199,7 @@ def create_plot():
     second_ax2.lines[0].set_linestyle("--")
     second_ax2.set_ylabel('Evaluation', color='blue') #, rotation=270, labelpad=10)
     second_ax2.tick_params(axis='y', labelcolor='blue')
-    second_ax2.set_xticks(np.arange(0, len(evaluation_values_best_iteration) + 1, step=len(evaluation_values_best_iteration) / 5))
+    second_ax2.set_xticks(np.around(np.arange(0, len(evaluation_values_best_iteration) + 1, step=len(evaluation_values_best_iteration) / 16)))
 
     step_yticks_second_ax2 = (np.max(evaluation_values_best_iteration) - np.min(evaluation_values_best_iteration)) / 15
     second_ax2.set_yticks(np.around(np.arange(np.min(evaluation_values_best_iteration), np.max(evaluation_values_best_iteration) + step_yticks_second_ax2, step=step_yticks_second_ax2), decimals=10))
@@ -220,8 +223,8 @@ def create_plot():
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.suptitle(title_plot)
-    plt.savefig(os.path.join(PLOTS_PATH, log_name + "_plot.png"))
-    #plt.show()
+    #plt.savefig(os.path.join(PLOTS_PATH, log_name + "_plot.png"))
+    plt.show()
 
 
     ##sns.lineplot(x=np.arange(len(min_vals))[::5], y=min_vals[::5], color='orange')

@@ -6,10 +6,13 @@ import pandas as pd
 
 
 # LOGS_PATH is a must to be the absolute path to the logs
-LOGS_PATH = os.path.join(os.path.split(os.path.abspath(os.getcwd()))[0], 'logs')
+LOGS_PATH = os.path.join(os.path.split(os.path.abspath(os.getcwd()))[0], 'logs', 'final')
 
-#log_type = 'eval1'
-log_type = 'eval2'
+#eval_type = 'eval1'
+eval_type = 'eval2'
+
+#update_type = 'mutation_update'
+update_type = 'standard_update'
 
 
 def filter_data(value):
@@ -21,7 +24,7 @@ def filter_data(value):
 
 def analyse_global_best():
 
-    for root, dirs, files in os.walk(os.path.join(LOGS_PATH, log_type)):
+    for root, dirs, files in os.walk(os.path.join(LOGS_PATH, update_type, eval_type)):
         for log_name in files:
             if 'iterations' in log_name:
                 print(log_name)
