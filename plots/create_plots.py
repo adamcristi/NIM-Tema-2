@@ -16,13 +16,13 @@ import matplotlib.ticker as ticker
 #log_name = "eval_particle_1_soft_best_run_log.txt"
 
 # eval_particle_1 and inertia assigment hard
-log_name = "eval_particle_1_hard_best_run_log.txt"
+#log_name = "eval_particle_1_hard_best_run_log.txt"
 
 # eval_particle_2 and inertia assigment soft
 #log_name = "eval_particle_2_soft_best_run_log.txt"
 
 # eval_particle_2 and inertia assigment hard
-#log_name = "eval_particle_2_hard_best_run_log.txt"
+log_name = "eval_particle_2_hard_best_run_log.txt"
 
 # test
 #log_name = 'test_best_run_log.txt'
@@ -75,7 +75,7 @@ def create_plot():
             current_evaluation_value_global_best = float(data_current_iteration[data_current_iteration.index('evaluation_value_global_best') + 1])
 
             coverages_global_best.append(current_coverage_global_best)
-            if current_is_full_coverage_global_best:
+            if current_is_full_coverage_global_best == 'True':
                 are_full_coverages_global_best.append('Yes')
             else:
                 are_full_coverages_global_best.append('No')
@@ -86,7 +86,7 @@ def create_plot():
             current_evaluation_value_minimum_coverage_personal_best = float(data_current_iteration[data_current_iteration.index('evaluation_value_minimum_coverage_personal_best') + 1])
 
             minimum_coverages_personal_best.append(current_coverage_minimum_coverage_personal_best)
-            if current_is_full_minimum_coverage_personal_best:
+            if current_is_full_minimum_coverage_personal_best == 'True':
                 are_full_minimum_coverages_personal_best.append('Yes')
             else:
                 are_full_minimum_coverages_personal_best.append('No')
@@ -97,7 +97,7 @@ def create_plot():
             current_evaluation_value_best_iteration = float(data_current_iteration[data_current_iteration.index('evaluation_value_best_iteration') + 1])
 
             coverages_best_iteration.append(current_coverage_best_iteration)
-            if current_is_full_coverage_best_iteration:
+            if current_is_full_coverage_best_iteration == 'True':
                 are_full_coverages_best_iteration.append('Yes')
             else:
                 are_full_coverages_best_iteration.append('No')
@@ -152,7 +152,7 @@ def create_plot():
     ax1.tick_params(axis='y', labelcolor='orange')
     # ax1.set_xticks(np.arange(0, len(coverages_global_best) + 1, step=len(coverages_global_best) / 5))
 
-    step_yticks_ax1 = (np.max(coverages_global_best) - np.min(coverages_global_best)) / 17
+    step_yticks_ax1 = (np.max(coverages_global_best) - np.min(coverages_global_best)) / 5
     ax1.set_yticks(np.around(np.arange(np.min(coverages_global_best), np.max(coverages_global_best) + step_yticks_ax1, step=step_yticks_ax1)))
 
     second_ax1 = ax1.twinx()
@@ -164,7 +164,7 @@ def create_plot():
     second_ax1.tick_params(axis='y', labelcolor='blue')
     second_ax1.set_xticks(np.arange(0, len(evaluation_values_global_best) + 1, step=len(evaluation_values_global_best) / 5))
 
-    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 12
+    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 9
     second_ax1.set_yticks(np.around(np.arange(np.min(evaluation_values_global_best), np.max(evaluation_values_global_best) + step_yticks_second_ax1,
                                               step=step_yticks_second_ax1), decimals=5))
 
@@ -186,7 +186,7 @@ def create_plot():
     ax2.tick_params(axis='y', labelcolor='orange')
     # ax2.set_xticks(np.arange(0, len(coverages_best_iteration)+1, step=len(coverages_best_iteration) / 5))
 
-    step_yticks_ax2 = (np.max(coverages_best_iteration) - np.min(coverages_best_iteration)) / 10
+    step_yticks_ax2 = (np.max(coverages_best_iteration) - np.min(coverages_best_iteration)) / 9
     ax2.set_yticks(np.around(np.arange(np.min(coverages_best_iteration), np.max(coverages_best_iteration) + step_yticks_ax2, step=step_yticks_ax2)))
 
     second_ax2 = ax2.twinx()
