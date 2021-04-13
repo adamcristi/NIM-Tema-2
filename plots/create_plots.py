@@ -19,10 +19,10 @@ import matplotlib.ticker as ticker
 #log_name = "eval_particle_1_hard_best_run_log.txt"
 
 # eval_particle_2 and inertia assigment soft
-#log_name = "eval_particle_2_soft_best_run_log.txt"
+log_name = "eval_particle_2_soft_best_run_log.txt"
 
 # eval_particle_2 and inertia assigment hard
-log_name = "eval_particle_2_hard_best_run_log.txt"
+#log_name = "eval_particle_2_hard_best_run_log.txt"
 
 # test
 #log_name = 'test_best_run_log.txt'
@@ -57,13 +57,13 @@ def create_plot():
 
     title_plot = ''
     if 'eval_particle_1' in log_name and 'soft' in log_name:
-        title_plot = 'First Evaluation Function and Soft Assignment Inertia Weight'
+        title_plot = 'Soft Assignment Inertia Weight'  # 'First Evaluation Function and Soft Assignment Inertia Weight'
     elif 'eval_particle_1' in log_name and 'hard' in log_name:
-        title_plot = 'First Evaluation Function and Hard Assignment Inertia Weight'
+        title_plot = 'Hard Assignment Inertia Weight'  # 'First Evaluation Function and Hard Assignment Inertia Weight'
     elif 'eval_particle_2' in log_name and 'soft' in log_name:
-        title_plot = 'Second Evaluation Function and Soft Assignment Inertia Weight'
+        title_plot = 'Soft Assignment Inertia Weight'  # 'Second Evaluation Function and Soft Assignment Inertia Weight'
     elif 'eval_particle_2' in log_name and 'hard' in log_name:
-        title_plot = 'Second Evaluation Function and Hard Assignment Inertia Weight'
+        title_plot = 'Hard Assignment Inertia Weight'  # 'Second Evaluation Function and Hard Assignment Inertia Weight'
 
     with open(os.path.join(LOGS_PATH, log_name), "r") as fd:
         current_iteration = fd.readline().strip()
@@ -167,7 +167,7 @@ def create_plot():
     second_ax1.tick_params(axis='y', labelcolor='blue')
     second_ax1.set_xticks(np.arange(0, len(evaluation_values_global_best) + 1, step=len(evaluation_values_global_best) / 5))
 
-    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 12
+    step_yticks_second_ax1 = (np.max(evaluation_values_global_best) - np.min(evaluation_values_global_best)) / 11
     second_ax1.set_yticks(np.around(np.arange(np.min(evaluation_values_global_best), np.max(evaluation_values_global_best) + step_yticks_second_ax1,
                                               step=step_yticks_second_ax1), decimals=5))
 
@@ -199,7 +199,7 @@ def create_plot():
     second_ax2.lines[0].set_linestyle("--")
     second_ax2.set_ylabel('Evaluation', color='blue') #, rotation=270, labelpad=10)
     second_ax2.tick_params(axis='y', labelcolor='blue')
-    second_ax2.set_xticks(np.around(np.arange(0, len(evaluation_values_best_iteration) + 1, step=len(evaluation_values_best_iteration) / 12)))
+    second_ax2.set_xticks(np.around(np.arange(0, len(evaluation_values_best_iteration) + 1, step=len(evaluation_values_best_iteration) / 10)))
 
     step_yticks_second_ax2 = (np.max(evaluation_values_best_iteration) - np.min(evaluation_values_best_iteration)) / 15
     second_ax2.set_yticks(np.around(np.arange(np.min(evaluation_values_best_iteration), np.max(evaluation_values_best_iteration) + step_yticks_second_ax2, step=step_yticks_second_ax2), decimals=10))
